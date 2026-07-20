@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+enum WorkMode {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum ApplicationSource {
+  LINKEDIN
+  NAUKRI
+  INDEED
+  COMPANY_WEBSITE
+  REFERRAL
+  OTHER
+}
+
+enum InterviewType {
+  HR
+  TECHNICAL
+  MANAGERIAL
+  ASSIGNMENT
+  FINAL
+  OTHER
+}
+
+enum InterviewResult {
+  PENDING
+  PASSED
+  FAILED
+  CANCELLED
+}
+
+model Company {
+  id           String        @id @default(cuid())
+  name         String
+  website      String?
+  industry     String?
+  location     String?
+  description  String?
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  applications Application[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Resume {
+  id           String        @id @default(cuid())
+  name         String
+  fileName     String
+  filePath     String
+  fileType     String?
+  fileSize     Int?
+  description  String?
+  isDefault    Boolean       @default(false)
+  applications Application[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Application {
+  id             String             @id @default(cuid())
+  jobTitle       String
+  jobUrl         String?
+  location       String?
+  salaryMin      Int?
+  salaryMax      Int?
+  currency       String             @default("INR")
+  status         ApplicationStatus  @default(SAVED)
+  workMode       WorkMode?
+  employmentType EmploymentType?
+  source         ApplicationSource?
+  appliedAt      DateTime?
+  closingDate    DateTime?
+  jobDescription String?
+  notes          String?
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  resumeId String?
+  resume   Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+
+  interviews    Interview[]
+  statusHistory ApplicationStatusHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([resumeId])
+  @@index([status])
+}
+
+model Interview {
+  id          String          @id @default(cuid())
+  type        InterviewType
+  scheduledAt DateTime
+  interviewer String?
+  meetingLink String?
+  location    String?
+  notes       String?
+  result      InterviewResult @default(PENDING)
+
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([applicationId])
+}
+
+model ApplicationStatusHistory {
+  id        String            @id @default(cuid())
+  status    ApplicationStatus
+  changedAt DateTime          @default(now())
+  notes     String?
+
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
