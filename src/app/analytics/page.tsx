@@ -22,6 +22,7 @@ function formatLabel(value: string) {
     .replaceAll("_", " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
+export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {
   const applications = await prisma.application.findMany({

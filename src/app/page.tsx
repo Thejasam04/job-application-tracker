@@ -22,7 +22,7 @@ function formatStatus(status: string) {
     .replaceAll("_", " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
-
+export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const applications = await prisma.application.findMany({
     include: {
