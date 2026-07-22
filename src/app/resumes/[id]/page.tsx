@@ -95,11 +95,11 @@ export default async function ResumeDetailsPage({
       : "applications"}
   </Badge>
 
-  <a
-    href={resume.filePath}
-    target="_blank"
-    rel="noopener noreferrer"
-  >
+<a
+  href={`/api/resumes/${resume.id}/view`}
+  target="_blank"
+  rel="noopener noreferrer"
+>
     <Button variant="outline">
       <ExternalLink className="mr-2 h-4 w-4" />
       View Resume
