@@ -1,7 +1,6 @@
 "use server";
 
-import fs from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
@@ -35,33 +34,18 @@ export async function createResume(formData: FormData) {
     throw new Error("Resume file must be smaller than 10 MB.");
   }
 
-  const uploadDirectory = path.join(
-    process.cwd(),
-    "public",
-    "uploads",
-    "resumes"
+  // Upload resume to private Vercel Blob storage
+  const blob = await put(
+    `resumes/${Date.now()}-${file.name}`,
+    file,
+    {
+      access: "private",
+      addRandomSuffix: true,
+    }
   );
 
-  await fs.mkdir(uploadDirectory, {
-    recursive: true,
-  });
-
-  const extension = path.extname(file.name);
-
-  const storedFileName = `${Date.now()}-${crypto.randomUUID()}${extension}`;
-
-  const absoluteFilePath = path.join(
-    uploadDirectory,
-    storedFileName
-  );
-
-  const bytes = await file.arrayBuffer();
-
-  await fs.writeFile(
-    absoluteFilePath,
-    Buffer.from(bytes)
-  );
-
+  // If this resume is set as default,
+  // remove the default status from existing resumes
   if (isDefault) {
     await prisma.resume.updateMany({
       where: {
@@ -73,11 +57,12 @@ export async function createResume(formData: FormData) {
     });
   }
 
+  // Save resume information in PostgreSQL
   await prisma.resume.create({
     data: {
       name,
       fileName: file.name,
-      filePath: `/uploads/resumes/${storedFileName}`,
+      filePath: blob.url,
       fileType: file.type,
       fileSize: file.size,
       description: description || null,
