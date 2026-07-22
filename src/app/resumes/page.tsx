@@ -1,9 +1,8 @@
 import Link from "next/link";
-
 import {
+  BriefcaseBusiness,
   FileText,
   Plus,
-  BriefcaseBusiness,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +15,10 @@ import {
 } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 
+// Always fetch the latest resume data from the database
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
@@ -25,6 +28,7 @@ function formatDate(date: Date) {
 }
 
 export default async function ResumesPage() {
+  // Fetch all resumes from PostgreSQL
   const resumes = await prisma.resume.findMany({
     include: {
       applications: true,
@@ -36,6 +40,7 @@ export default async function ResumesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Page Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
@@ -56,6 +61,7 @@ export default async function ResumesPage() {
         </Link>
       </div>
 
+      {/* Empty State */}
       {resumes.length === 0 ? (
         <Card>
           <CardContent className="flex min-h-80 flex-col items-center justify-center text-center">
@@ -79,25 +85,26 @@ export default async function ResumesPage() {
           </CardContent>
         </Card>
       ) : (
+        /* Resume Cards */
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {resumes.map((resume) => (
             <Card key={resume.id}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
                       <FileText className="h-5 w-5" />
                     </div>
 
-                    <div>
-                      <CardTitle className="text-lg">
-  <Link
-    href={`/resumes/${resume.id}`}
-    className="hover:underline"
-  >
-    {resume.name}
-  </Link>
-</CardTitle>
+                    <div className="min-w-0">
+                      <CardTitle className="truncate text-lg">
+                        <Link
+                          href={`/resumes/${resume.id}`}
+                          className="hover:underline"
+                        >
+                          {resume.name}
+                        </Link>
+                      </CardTitle>
 
                       <p className="mt-1 text-sm text-muted-foreground">
                         Added {formatDate(resume.createdAt)}
@@ -122,6 +129,12 @@ export default async function ResumesPage() {
                       : "applications"}
                   </span>
                 </div>
+
+                {resume.isDefault && (
+                  <Badge className="mt-4">
+                    Default Resume
+                  </Badge>
+                )}
               </CardContent>
             </Card>
           ))}

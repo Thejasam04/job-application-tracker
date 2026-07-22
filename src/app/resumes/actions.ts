@@ -1,6 +1,7 @@
 "use server";
 
 import { put } from "@vercel/blob";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/prisma";
@@ -11,14 +12,17 @@ export async function createResume(formData: FormData) {
   const isDefault = formData.get("isDefault") === "on";
   const file = formData.get("file");
 
+  // Validate resume name
   if (!name) {
     throw new Error("Resume name is required.");
   }
 
+  // Validate uploaded file
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("Please select a resume file.");
   }
 
+  // Allowed file types
   const allowedTypes = [
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -28,6 +32,7 @@ export async function createResume(formData: FormData) {
     throw new Error("Only PDF and DOCX files are supported.");
   }
 
+  // Maximum file size: 10 MB
   const maxFileSize = 10 * 1024 * 1024;
 
   if (file.size > maxFileSize) {
@@ -44,8 +49,7 @@ export async function createResume(formData: FormData) {
     }
   );
 
-  // If this resume is set as default,
-  // remove the default status from existing resumes
+  // Remove existing default resume if required
   if (isDefault) {
     await prisma.resume.updateMany({
       where: {
@@ -57,7 +61,7 @@ export async function createResume(formData: FormData) {
     });
   }
 
-  // Save resume information in PostgreSQL
+  // Save resume details in PostgreSQL
   await prisma.resume.create({
     data: {
       name,
@@ -70,5 +74,9 @@ export async function createResume(formData: FormData) {
     },
   });
 
+  // Refresh the resumes page
+  revalidatePath("/resumes");
+
+  // Redirect back to resumes
   redirect("/resumes");
 }
